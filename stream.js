@@ -1,44 +1,80 @@
-// File: pages/api/stream.js
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SMS Sender</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 30px;
+      text-align: center;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: auto;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #response {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
 
-import crypto from 'crypto';
+  <div class="container">
+    <h2>Send SMS to Customer</h2>
+    <form id="smsForm">
+      <input type="text" id="number" placeholder="Enter phone number (e.g., 01324274940)" required>
+      <textarea id="message" placeholder="Enter your message..." rows="4" required></textarea>
+      <button type="submit">Send SMS</button>
+    </form>
+    <div id="response"></div>
+  </div>
 
-export default async function handler(req, res) {
-  const { id, token, timestamp } = req.query;
+  <script>
+    document.getElementById('smsForm').addEventListener('submit', function(e) {
+      e.preventDefault();
 
-  if (!validateToken(id, timestamp, token)) {
-    return res.status(403).send('Invalid or expired token');
-  }
+      const number = document.getElementById('number').value.trim();
+      const message = document.getElementById('message').value.trim();
 
-  const channelMap = {
-    'ntv': 'http://opplextv.cyou:8080/live/2649573527/5392422628/245989.m3u8',
-    'atn': 'https://example.com/live/atn.m3u8',
-    'channel-i': 'https://example.com/live/channel-i.m3u8'
-  };
+      const url = `https://root-x.yzz.me/saimul/saimul30day.php?number=${encodeURIComponent(number)}&message=${encodeURIComponent(message)}&i=1`;
 
-  const streamUrl = channelMap[id];
-  if (!streamUrl) return res.status(404).send('Channel not found');
+      fetch(url)
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById('response').innerText = "✅ " + data;
+        })
+        .catch(err => {
+          document.getElementById('response').innerText = "❌ Error sending message.";
+        });
+    });
+  </script>
 
-  try {
-    const response = await fetch(streamUrl);
-    if (!response.ok) throw new Error('Stream not found');
-
-    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-    response.body.pipe(res);
-  } catch (err) {
-    res.status(500).send('Error fetching stream');
-  }
-}
-
-function validateToken(id, timestamp, token) {
-  const secret = 'mySecretKey';
-
-  // Expire in 14400 minutes
-  const now = Math.floor(Date.now() / 1000);
-  if (Math.abs(now - parseInt(timestamp)) > 300) return false;
-
-  const expectedToken = crypto.createHmac('sha256', secret)
-    .update(id + timestamp)
-    .digest('hex');
-
-  return token === expectedToken;
-}
+</body>
+</html>
